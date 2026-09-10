@@ -49,13 +49,16 @@
 
         <!-- Action Triggers -->
         <div class="flex items-center space-x-2">
+            <button onclick="openIngestModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-emerald-900/30 flex items-center gap-1">
+                ➕ Ingest Intel
+            </button>
             <button onclick="detectKingpins()" class="bg-red-600 hover:bg-red-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-red-900/30">
                 👑 Kingpin
             </button>
             <button onclick="detectBridgeNode()" class="bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-purple-900/30">
                 🌉 Bridge Node
             </button>
-            <button onclick="traceHawala()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-emerald-900/30">
+            <button onclick="traceHawala()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-teal-900/30">
                 💸 Hawala Flow
             </button>
             <button onclick="detectBurners()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-amber-900/30">
@@ -96,6 +99,69 @@
         </div>
     </div>
 
+    <!-- Live Evidence Ingestion Modal -->
+    <div id="ingestModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="font-bold text-slate-100 flex items-center gap-2">
+                    <span class="text-emerald-500">⚡</span> Log Live Evidence / Entity
+                </h3>
+                <button onclick="closeIngestModal()" class="text-slate-400 hover:text-slate-100 text-lg">&times;</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-800 mb-4 text-xs font-semibold">
+                <button id="tabSuspectBtn" onclick="switchTab('suspect')" class="pb-2 border-b-2 border-emerald-500 text-emerald-400 px-3">Suspect</button>
+                <button id="tabCallBtn" onclick="switchTab('call')" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 px-3">Wiretap Call</button>
+            </div>
+
+            <!-- Suspect Form -->
+            <form id="formSuspect" onsubmit="submitSuspect(event)" class="space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Suspect Full Name</label>
+                    <input id="inputName" required placeholder="e.g., Kabir Mehta" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none focus:border-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Operational Role</label>
+                    <select id="inputRole" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                        <option value="Field Mule">Field Mule</option>
+                        <option value="Cash Courier">Cash Courier</option>
+                        <option value="Lieutenant">Lieutenant</option>
+                        <option value="Hawala Operator">Hawala Operator</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Linked Phone Number (Optional)</label>
+                    <input id="inputPhone" placeholder="+91-98888-77777" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeIngestModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Add Entity</button>
+                </div>
+            </form>
+
+            <!-- Wiretap Form -->
+            <form id="formCall" onsubmit="submitCall(event)" class="hidden space-y-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">Caller Phone Number</label>
+                    <input id="inputCaller" required placeholder="+91-98888-11111" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Receiver Phone Number</label>
+                    <input id="inputReceiver" required placeholder="+91-90000-88888" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">Intercepted Call Duration (seconds)</label>
+                    <input id="inputDuration" type="number" value="180" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeIngestModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Cancel</button>
+                    <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Log Call Link</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         let network = null;
         let visNodes = null;
@@ -108,6 +174,83 @@
             "FIR": { bg: "#ef4444", border: "#b91c1c" },
             "Case": { bg: "#8b5cf6", border: "#6d28d9" }
         };
+
+        function openIngestModal() {
+            document.getElementById("ingestModal").classList.remove("hidden");
+        }
+
+        function closeIngestModal() {
+            document.getElementById("ingestModal").classList.add("hidden");
+        }
+
+        function switchTab(tab) {
+            if (tab === 'suspect') {
+                document.getElementById("formSuspect").classList.remove("hidden");
+                document.getElementById("formCall").classList.add("hidden");
+                document.getElementById("tabSuspectBtn").className = "pb-2 border-b-2 border-emerald-500 text-emerald-400 px-3";
+                document.getElementById("tabCallBtn").className = "pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 px-3";
+            } else {
+                document.getElementById("formSuspect").classList.add("hidden");
+                document.getElementById("formCall").classList.remove("hidden");
+                document.getElementById("tabSuspectBtn").className = "pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 px-3";
+                document.getElementById("tabCallBtn").className = "pb-2 border-b-2 border-emerald-500 text-emerald-400 px-3";
+            }
+        }
+
+        async function submitSuspect(e) {
+            e.preventDefault();
+            const name = document.getElementById("inputName").value;
+            const role = document.getElementById("inputRole").value;
+            const phone = document.getElementById("inputPhone").value;
+            const feed = document.getElementById("alert-feed");
+
+            const payload = {
+                name: name,
+                role: role,
+                aliases: [],
+                phone_numbers: phone ? [phone] : []
+            };
+
+            feed.innerHTML += `<p class="text-sky-400">⚡ Ingesting suspect ${name}...</p>`;
+            try {
+                const res = await fetch("/persons", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Suspect ${name} registered and linked into Neo4j.</p>`;
+                    closeIngestModal();
+                    await loadGraph();
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Ingestion failed: ${err.message}</p>`;
+            }
+        }
+
+        async function submitCall(e) {
+            e.preventDefault();
+            const caller = document.getElementById("inputCaller").value;
+            const receiver = document.getElementById("inputReceiver").value;
+            const duration = parseInt(document.getElementById("inputDuration").value) || 60;
+            const feed = document.getElementById("alert-feed");
+
+            feed.innerHTML += `<p class="text-amber-400">⚡ Registering wiretap between ${caller} & ${receiver}...</p>`;
+            try {
+                const res = await fetch("/calls", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ caller, receiver, call_count: 1, total_duration: duration })
+                });
+                if (res.ok) {
+                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Wiretap call edge mapped.</p>`;
+                    closeIngestModal();
+                    await loadGraph();
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Call ingestion failed: ${err.message}</p>`;
+            }
+        }
 
         async function loadGraph() {
             const feed = document.getElementById("alert-feed");
