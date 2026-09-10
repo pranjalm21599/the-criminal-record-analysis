@@ -1,0 +1,42 @@
+"""
+Pings every service's /health endpoint and reports what's up before a demo.
+Run this: python integration/health_check.py
+"""
+import sys
+import requests
+
+SERVICES = {
+    "Backend (M1)": "http://localhost:8000/health",
+    "NLP (M2)": "http://localhost:8001/health",
+    "Graph (M3)": "http://localhost:8002/health",
+    "Analysis (M4)": "http://localhost:8003/health",
+    "AI Chat (M6)": "http://localhost:8004/health",
+    "Frontend (M5)": "http://localhost:5173",
+}
+
+
+def check_all() -> bool:
+    print("Checking all services...\n")
+    all_ok = True
+
+    for service, url in SERVICES.items():
+        try:
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200:
+                print(f"[OK]   {service}: running at {url}")
+            else:
+                print(f"[WARN] {service}: responded with {resp.status_code}")
+                all_ok = False
+        except requests.ConnectionError:
+            print(f"[DOWN] {service}: not reachable at {url}")
+            all_ok = False
+        except requests.Timeout:
+            print(f"[DOWN] {service}: timed out at {url}")
+            all_ok = False
+
+    print("\n" + ("ALL SYSTEMS GO" if all_ok else "SOME SERVICES ARE DOWN"))
+    return all_ok
+
+
+if __name__ == "__main__":
+    sys.exit(0 if check_all() else 1)
