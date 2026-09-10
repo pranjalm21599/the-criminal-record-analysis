@@ -131,3 +131,15 @@ def identify_kingpins():
 def identify_bridge_nodes():
     bridges = analytics.detect_critical_bridge()
     return {"bridge_nodes": bridges}
+
+@app.get("/analytics/dossier")
+def get_dossier():
+    return analytics.generate_intelligence_brief()
+
+@app.get("/analytics/cells")
+def get_syndicate_cells():
+    return {"cells": analytics.detect_syndicate_cells()}
+
+@app.get("/analytics/simulate-arrest/{suspect_name}")
+def simulate_arrest(suspect_name: str):
+    return analytics.simulate_target_arrest(suspect_name)
