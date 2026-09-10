@@ -67,7 +67,40 @@ class PatternExtractor:
             results[entity_type] = list(found)
 
         return results
+    def extract_phones(self, text):
 
+        found = set()
+
+        for pattern in self.patterns["phone"]:
+
+            matches = re.findall(
+                pattern,
+                text,
+                re.IGNORECASE
+            )
+
+            for match in matches:
+                found.add(match.strip())
+
+        return list(found)
+
+
+    def extract_vehicles(self, text):
+
+        found = set()
+
+        for pattern in self.patterns["vehicle"]:
+
+            matches = re.findall(
+                pattern,
+                text,
+                re.IGNORECASE
+            )
+
+            for match in matches:
+                found.add(match.strip())
+
+        return list(found)
 
 if __name__ == "__main__":
 
