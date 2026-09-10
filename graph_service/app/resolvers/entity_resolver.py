@@ -3,10 +3,6 @@ from typing import Dict, List
 
 class EntityResolver:
     def link_co_accused(self, fir_number: str, person_names: List[str]):
-        """
-        Links multiple persons to an FIR and creates CO_ACCUSED 
-        relationships between all suspects on that same case.
-        """
         query = """
         MATCH (f:FIR {fir_number: $fir_number})
         UNWIND $names AS name
@@ -24,9 +20,6 @@ class EntityResolver:
         return db.execute_query(cross_link_query, {"fir_number": fir_number})
 
     def detect_shared_identifiers(self):
-        """
-        Detects distinct people who are linked to the exact same phone number.
-        """
         query = """
         MATCH (p1:Person)-[:USES_PHONE]->(ph:Phone)<-[:USES_PHONE]-(p2:Person)
         WHERE elementId(p1) < elementId(p2)
@@ -35,10 +28,6 @@ class EntityResolver:
         return db.execute_query(query)
 
     def get_person_network(self, person_name: str, depth: int = 2):
-        """
-        Traverses outwards up to 'depth' hops to extract the full 
-        subgraph for visual analysis on the frontend.
-        """
         query = f"""
         MATCH path = (p:Person {{name: $name}})-[*1..{depth}]-(target)
         RETURN [n in nodes(path) | {{id: elementId(n), labels: labels(n), props: properties(n)}}] AS nodes,
@@ -49,13 +38,39 @@ class EntityResolver:
 
     def find_connection_path(self, start_name: str, end_name: str):
         """
-        Finds the shortest link between any two people through 
-        phones, cases, associates, or accounts.
+        Calculates shortest path with a 15-hop limit and returns exact node IDs
+        and edge hops for Vis.js canvas highlighting.
         """
         query = """
         MATCH (p1:Person {name: $start_name}), (p2:Person {name: $end_name})
-        MATCH path = shortestPath((p1)-[*]-(p2))
-        RETURN [n in nodes(path) | coalesce(n.name, n.number, n.fir_number, n.account_number)] AS chain,
-               [r in relationships(path) | type(r)] AS link_types
+        MATCH path = shortestPath((p1)-[*..15]-(p2))
+        RETURN [n in nodes(path) | elementId(n)] AS node_ids,
+               [n in nodes(path) | coalesce(n.name, n.number, n.fir_number, n.account_number, n.case_number)] AS labels,
+               [r in relationships(path) | {from: elementId(startNode(r)), to: elementId(endNode(r)), type: type(r)}] AS edges
         """
         return db.execute_query(query, {"start_name": start_name, "end_name": end_name})
+
+    def get_full_graph_data(self):
+        query = """
+        MATCH (n)
+        OPTIONAL MATCH (n)-[r]->(m)
+        WITH collect(DISTINCT n) AS all_nodes, collect(DISTINCT r) AS all_rels
+        RETURN [n in all_nodes | {
+            id: elementId(n),
+            label: coalesce(n.name, n.number, n.account_number, n.fir_number, n.case_number, 'Unknown'),
+            type: head(labels(n)),
+            role: n.role,
+            risk_score: n.risk_score,
+            props: properties(n)
+        }] AS nodes,
+        [r in all_rels WHERE r IS NOT NULL | {
+            from: elementId(startNode(r)),
+            to: elementId(endNode(r)),
+            type: type(r),
+            props: properties(r)
+        }] AS edges
+        """
+        result = db.execute_query(query)
+        if result:
+            return result[0]
+        return {"nodes": [], "edges": []}

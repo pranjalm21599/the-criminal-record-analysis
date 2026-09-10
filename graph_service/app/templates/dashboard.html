@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrimeNet // Criminal Network Intelligence OSINT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        #network {
+            width: 100%;
+            height: calc(100vh - 84px);
+            background: radial-gradient(circle at center, #0f172a, #020617);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
+
+    <!-- Top Navbar -->
+    <header class="h-21 bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-lg bg-red-600/20 border border-red-500 flex items-center justify-center font-black text-red-500 text-lg">
+                ⚡
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-wider text-slate-100 uppercase">CrimeNet <span class="text-red-500 text-xs font-semibold">Graph OSINT</span></h1>
+                <p class="text-[11px] text-slate-400">Neo4j Syndicate & Entity Resolution Engine</p>
+            </div>
+        </div>
+
+        <!-- Path Finding Form -->
+        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 space-x-2">
+            <span class="text-xs font-semibold text-slate-400">Path:</span>
+            <select id="startSuspect" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 outline-none">
+                <option value="Ravi Kumar">Ravi Kumar (Mule)</option>
+                <option value="Vikas Sharma">Vikas Sharma (Mule)</option>
+                <option value="Amit Verma">Amit Verma (Logistics)</option>
+            </select>
+            <span class="text-slate-500 text-xs">➔</span>
+            <select id="endSuspect" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 outline-none">
+                <option value="Vikram Sethi">Vikram Sethi (Kingpin)</option>
+                <option value="Anita Roy">Anita Roy (Hawala)</option>
+                <option value="Sameer Khan">Sameer Khan (Handler)</option>
+            </select>
+            <button onclick="traceShortestPath()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-3 py-1 rounded transition">
+                Trace Link
+            </button>
+        </div>
+
+        <!-- Action Triggers -->
+        <div class="flex items-center space-x-2">
+            <button onclick="detectKingpins()" class="bg-red-600 hover:bg-red-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-red-900/30">
+                👑 Kingpin
+            </button>
+            <button onclick="detectBridgeNode()" class="bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-purple-900/30">
+                🌉 Bridge Node
+            </button>
+            <button onclick="traceHawala()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-emerald-900/30">
+                💸 Hawala Flow
+            </button>
+            <button onclick="detectBurners()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-amber-900/30">
+                📱 Burner Links
+            </button>
+            <button onclick="generateDossier()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-blue-900/30">
+                📄 Dossier
+            </button>
+            <button onclick="loadGraph()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg transition">
+                🔄 Reset
+            </button>
+        </div>
+    </header>
+
+    <div class="relative w-full h-full flex">
+        <!-- Graph Canvas -->
+        <div id="network" class="flex-grow"></div>
+
+        <!-- Floating Dossier / Inspection Sidebar -->
+        <div id="dossier" class="absolute top-4 right-4 w-96 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl p-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+                <h2 class="text-xs font-bold uppercase tracking-wide text-slate-300">Entity Dossier</h2>
+                <span id="badge-type" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">Inspect</span>
+            </div>
+            
+            <div id="dossier-content" class="text-xs space-y-2 text-slate-300">
+                <p class="text-slate-500 italic">Click on any node in the graph to inspect intelligence properties.</p>
+            </div>
+
+            <!-- Live Alert Feed Box -->
+            <div class="mt-4 pt-3 border-t border-slate-800">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live Intel Feed</h3>
+                <div id="alert-feed" class="text-[11px] p-3 rounded bg-slate-950 border border-slate-800 text-slate-400 max-h-48 overflow-y-auto space-y-1">
+                    <p class="text-emerald-400">✓ Graph engine connected to Neo4j AuraDB.</p>
+                    <p class="text-slate-500">Ready for automated pathfinding and centrality queries.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let network = null;
+        let visNodes = null;
+        let visEdges = null;
+
+        const typeColors = {
+            "Person": { bg: "#3b82f6", border: "#1d4ed8" },
+            "Phone": { bg: "#f59e0b", border: "#b45309" },
+            "BankAccount": { bg: "#10b981", border: "#047857" },
+            "FIR": { bg: "#ef4444", border: "#b91c1c" },
+            "Case": { bg: "#8b5cf6", border: "#6d28d9" }
+        };
+
+        async function loadGraph() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-sky-400">Refreshing network topology...</p>`;
+            try {
+                const res = await fetch("/network/full-graph");
+                const data = await res.json();
+
+                const nodesArray = data.nodes.map(n => {
+                    let color = typeColors[n.type] || { bg: "#64748b", border: "#334155" };
+                    let size = 20;
+
+                    if (n.role === "Kingpin") {
+                        color = { bg: "#dc2626", border: "#991b1b" };
+                        size = 36;
+                    } else if (n.role && n.role.includes("Lieutenant")) {
+                        color = { bg: "#f97316", border: "#c2410c" };
+                        size = 28;
+                    }
+
+                    return {
+                        id: n.id,
+                        label: n.label,
+                        group: n.type,
+                        color: { background: color.bg, border: color.border, highlight: { background: "#ffffff", border: color.border } },
+                        size: size,
+                        font: { color: "#f8fafc", size: 12, face: "sans-serif" },
+                        rawProps: n.props,
+                        nodeType: n.type
+                    };
+                });
+
+                const edgesArray = data.edges.map(e => ({
+                    from: e.from,
+                    to: e.to,
+                    label: e.type,
+                    font: { color: "#94a3b8", size: 9, align: "middle" },
+                    arrows: "to",
+                    color: { color: "#334155", highlight: "#f8fafc" },
+                    smooth: { type: "continuous" },
+                    rawProps: e.props
+                }));
+
+                visNodes = new vis.DataSet(nodesArray);
+                visEdges = new vis.DataSet(edgesArray);
+
+                const container = document.getElementById("network");
+                const visData = { nodes: visNodes, edges: visEdges };
+                const options = {
+                    nodes: { shape: "dot", shadow: true },
+                    edges: { width: 1.5, shadow: false },
+                    physics: {
+                        solver: "forceAtlas2Based",
+                        forceAtlas2Based: { gravitationalConstant: -55, centralGravity: 0.01, springLength: 100, springConstant: 0.08 }
+                    }
+                };
+
+                network = new vis.Network(container, visData, options);
+
+                network.on("click", function (params) {
+                    if (params.nodes.length > 0) {
+                        inspectNode(params.nodes[0]);
+                    }
+                });
+
+                feed.innerHTML += `<p class="text-emerald-400">✓ Graph ready: ${nodesArray.length} entities & ${edgesArray.length} links.</p>`;
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Failed to fetch graph data: ${err.message}</p>`;
+            }
+        }
+
+        function inspectNode(nodeId) {
+            const node = visNodes.get(nodeId);
+            if (!node) return;
+
+            document.getElementById("badge-type").innerText = node.nodeType;
+            let html = `<div class="font-bold text-sm text-slate-100 mb-2">${node.label}</div>`;
+            html += `<table class="w-full text-left">`;
+            for (let [k, v] of Object.entries(node.rawProps || {})) {
+                html += `<tr><td class="text-slate-500 py-1 capitalize">${k.replace('_', ' ')}:</td><td class="text-slate-200 font-mono text-right">${v}</td></tr>`;
+            }
+            html += `</table>`;
+            document.getElementById("dossier-content").innerHTML = html;
+        }
+
+        async function traceShortestPath() {
+            const start = document.getElementById("startSuspect").value;
+            const end = document.getElementById("endSuspect").value;
+            const feed = document.getElementById("alert-feed");
+
+            feed.innerHTML += `<p class="text-cyan-400">🔍 Calculating shortest path between <b>${start}</b> and <b>${end}</b>...</p>`;
+
+            try {
+                const res = await fetch(`/network/shortest-path?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+                const data = await res.json();
+                
+                if (!data.path || !data.path.node_ids) {
+                    feed.innerHTML += `<p class="text-amber-400">No indirect connection found between these targets.</p>`;
+                    return;
+                }
+
+                const pathNodeIds = new Set(data.path.node_ids);
+                feed.innerHTML += `<p class="text-cyan-300 font-bold">🎯 Path Discovered (${data.path.node_ids.length} hops):<br>${data.path.labels.join(" ➔ ")}</p>`;
+
+                const updates = visNodes.get().map(node => {
+                    if (pathNodeIds.has(node.id)) {
+                        return {
+                            id: node.id,
+                            color: { background: "#06b6d4", border: "#ffffff" },
+                            size: 32
+                        };
+                    } else {
+                        return {
+                            id: node.id,
+                            color: { background: "#1e293b", border: "#334155" },
+                            size: 14
+                        };
+                    }
+                });
+                visNodes.update(updates);
+                network.fit({ nodes: Array.from(pathNodeIds), animation: true });
+
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Path computation failed: ${err.message}</p>`;
+            }
+        }
+
+        async function detectBridgeNode() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-purple-400">🌉 Computing betweenness centrality & bridge nodes...</p>`;
+            try {
+                const res = await fetch("/analytics/bridge-nodes");
+                const data = await res.json();
+                const bridges = data.bridge_nodes;
+
+                if (bridges.length > 0) {
+                    const top = bridges[0];
+                    feed.innerHTML += `<p class="text-purple-300 font-bold">⚠️ CRITICAL BOTTLENECK: <b>${top.person}</b> (${top.role}) [Score: ${top.broker_score}]. Severing this node breaks communications!</p>`;
+
+                    visNodes.get().forEach(n => {
+                        if (n.label === top.person) {
+                            visNodes.update({ id: n.id, size: 40, color: { background: "#a855f7", border: "#ffffff" } });
+                            network.focus(n.id, { scale: 1.2, animation: true });
+                            inspectNode(n.id);
+                        }
+                    });
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Bridge calculation failed: ${err.message}</p>`;
+            }
+        }
+
+        async function detectKingpins() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-red-400">👑 Analyzing command hierarchy & funding trails...</p>`;
+            const res = await fetch("/analytics/kingpins");
+            const data = await res.json();
+            const kingpins = data.kingpin_candidates;
+
+            if (kingpins.length > 0) {
+                const top = kingpins[0];
+                feed.innerHTML += `<p class="text-red-500 font-bold">⚠️ KINGPIN IDENTIFIED: ${top.candidate_name} (Risk: ${top.risk_score})</p>`;
+                
+                visNodes.get().forEach(n => {
+                    if (n.label === top.candidate_name) {
+                        visNodes.update({ id: n.id, size: 45, color: { background: "#ff0044", border: "#ffffff" } });
+                        network.focus(n.id, { scale: 1.2, animation: true });
+                        inspectNode(n.id);
+                    }
+                });
+            }
+        }
+
+        async function traceHawala() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-emerald-400">💸 Tracing cross-border Hawala funds...</p>`;
+            const res = await fetch("/analytics/money-trail/CH-SWISS-909");
+            const data = await res.json();
+
+            if (data.trails && data.trails.length > 0) {
+                feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Multi-hop money laundering chain flagged across ${data.trails.length} pathways.</p>`;
+                visNodes.get().forEach(n => {
+                    if (n.nodeType === "BankAccount") {
+                        visNodes.update({ id: n.id, size: 30, color: { background: "#10b981", border: "#ffffff" } });
+                    }
+                });
+            }
+        }
+
+        async function detectBurners() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-amber-400">📱 Intercepting burner phone sharing...</p>`;
+            const res = await fetch("/analytics/shared-phones");
+            const data = await res.json();
+
+            if (data.shared_identifiers && data.shared_identifiers.length > 0) {
+                const item = data.shared_identifiers[0];
+                feed.innerHTML += `<p class="text-amber-400 font-bold">⚠️ Burner ${item.shared_phone} connects ${item.person_1} & ${item.person_2}!</p>`;
+                
+                visNodes.get().forEach(n => {
+                    if (n.label === item.shared_phone) {
+                        visNodes.update({ id: n.id, size: 32, color: { background: "#f59e0b", border: "#ffffff" } });
+                        network.focus(n.id, { scale: 1.1, animation: true });
+                        inspectNode(n.id);
+                    }
+                });
+            }
+        }
+
+        async function generateDossier() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-blue-400">📄 Synthesizing official Law Enforcement Dossier...</p>`;
+            const res = await fetch("/analytics/dossier");
+            const data = await res.json();
+
+            document.getElementById("badge-type").innerText = "DOSSIER BRIEF";
+            let html = `
+                <div class="font-bold text-xs text-red-400 uppercase tracking-wide border-b border-slate-800 pb-1 mb-2">${data.title}</div>
+                <div class="space-y-2">
+                    <p><b>Target:</b> <span class="text-red-400 font-bold">${data.primary_target.name}</span> (${data.primary_target.classification})</p>
+                    <p><b>Risk Rating:</b> <span class="text-amber-400">${data.primary_target.risk_rating}</span></p>
+                    <p><b>Critical Bottleneck:</b> <span class="text-purple-400 font-semibold">${data.critical_broker.name}</span></p>
+                    <div class="mt-2 text-[10px] bg-slate-950 p-2 rounded border border-slate-800">
+                        <p class="font-bold text-emerald-400 mb-1">Recommended Actions:</p>
+                        <ul class="list-disc list-inside space-y-1 text-slate-300">
+                            ${data.recommended_enforcement_actions.map(a => `<li>${a}</li>`).join("")}
+                        </ul>
+                    </div>
+                </div>
+            `;
+            document.getElementById("dossier-content").innerHTML = html;
+            feed.innerHTML += `<p class="text-blue-300 font-bold">✓ Charge Sheet generated in inspection sidebar.</p>`;
+        }
+
+        window.onload = loadGraph;
+    </script>
+</body>
+</html>

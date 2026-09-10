@@ -1,11 +1,15 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+import os
 
 from app.builders.person_builder import PersonBuilder
 from app.builders.phone_builder import PhoneBuilder
 from app.builders.case_builder import CaseBuilder
 from app.resolvers.entity_resolver import EntityResolver
+from app.resolvers.network_analytics import NetworkAnalytics
 
 app = FastAPI(
     title="Criminal Network Analysis Graph API",
@@ -13,12 +17,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Enable CORS for hackathon cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 person_builder = PersonBuilder()
 phone_builder = PhoneBuilder()
 case_builder = CaseBuilder()
 resolver = EntityResolver()
+analytics = NetworkAnalytics()
 
-# --- Request Schemas ---
+# --- Schemas ---
 class PersonCreate(BaseModel):
     name: str
     role: Optional[str] = "suspect"
@@ -42,10 +56,19 @@ class CoAccusedRequest(BaseModel):
     fir_number: str
     suspect_names: List[str]
 
-# --- Routes ---
+# --- Visual Dashboard Route ---
+@app.get("/dashboard", response_class=HTMLResponse)
+def view_dashboard():
+    template_path = os.path.join(os.path.dirname(__file__), "templates", "dashboard.html")
+    if not os.path.exists(template_path):
+        raise HTTPException(status_code=404, detail="Dashboard template not found")
+    with open(template_path, "r", encoding="utf-8") as f:
+        return f.read()
+
+# --- Ingestion & Resolution Routes ---
 @app.get("/")
 def root():
-    return {"status": "online", "system": "Criminal Network Graph API"}
+    return {"status": "online", "dashboard_url": "/dashboard", "docs_url": "/docs"}
 
 @app.post("/persons")
 def add_person(payload: PersonCreate):
@@ -69,10 +92,9 @@ def link_suspects_in_case(payload: CoAccusedRequest):
     links = resolver.link_co_accused(payload.fir_number, payload.suspect_names)
     return {"status": "success", "links_created": links}
 
-@app.get("/analytics/shared-phones")
-def detect_shared_phones():
-    shared = resolver.detect_shared_identifiers()
-    return {"shared_identifiers": shared}
+@app.get("/network/full-graph")
+def get_full_graph():
+    return resolver.get_full_graph_data()
 
 @app.get("/network/person/{name}")
 def get_network(name: str, depth: int = 2):
@@ -85,3 +107,27 @@ def find_path(start: str, end: str):
     if not path:
         raise HTTPException(status_code=404, detail="No connection path found")
     return {"path": path[0]}
+
+# --- Centrality & Intelligence Routes ---
+@app.get("/analytics/shared-phones")
+def detect_shared_phones():
+    return {"shared_identifiers": resolver.detect_shared_identifiers()}
+
+@app.get("/analytics/centrality")
+def get_centrality(limit: int = 15):
+    return {"centrality": analytics.get_degree_centrality(limit=limit)}
+
+@app.get("/analytics/money-trail/{account_number}")
+def trace_money(account_number: str):
+    trail = analytics.trace_money_trail(account_number)
+    return {"source_account": account_number, "trails": trail}
+
+@app.get("/analytics/kingpins")
+def identify_kingpins():
+    candidates = analytics.detect_kingpin_candidates()
+    return {"kingpin_candidates": candidates}
+
+@app.get("/analytics/bridge-nodes")
+def identify_bridge_nodes():
+    bridges = analytics.detect_critical_bridge()
+    return {"bridge_nodes": bridges}
