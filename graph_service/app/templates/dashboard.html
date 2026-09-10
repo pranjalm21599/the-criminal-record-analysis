@@ -9,107 +9,116 @@
     <style>
         #network {
             width: 100%;
-            height: calc(100vh - 84px);
+            height: 100%;
             background: radial-gradient(circle at center, #0f172a, #020617);
         }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden flex flex-col h-screen">
 
-    <!-- Top Navbar -->
-    <header class="h-21 bg-slate-900 border-b border-slate-800 px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center space-x-3">
-            <div class="h-10 w-10 rounded-lg bg-red-600/20 border border-red-500 flex items-center justify-center font-black text-red-500 text-lg">
+    <!-- Top Navbar (Flex Shrink 0 ensures it never overflows or clips buttons) -->
+    <header class="flex-shrink-0 bg-slate-900 border-b border-slate-800 px-5 py-2.5 flex flex-wrap items-center justify-between gap-2.5 z-20">
+        <!-- Logo -->
+        <div class="flex items-center space-x-2.5">
+            <div class="h-9 w-9 rounded-lg bg-red-600/20 border border-red-500 flex items-center justify-center font-black text-red-500 text-base shadow-sm">
                 ⚡
             </div>
             <div>
-                <h1 class="text-lg font-bold tracking-wider text-slate-100 uppercase">CrimeNet <span class="text-red-500 text-xs font-semibold">Graph OSINT</span></h1>
-                <p class="text-[11px] text-slate-400">Neo4j Syndicate & Entity Resolution Engine</p>
+                <h1 class="text-sm font-black tracking-wider text-slate-100 uppercase">CrimeNet <span class="text-red-500 text-[10px] font-bold">OSINT</span></h1>
+                <p class="text-[10px] text-slate-400 leading-none">Syndicate Intelligence Graph</p>
             </div>
         </div>
 
         <!-- Path Finding Form -->
-        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 space-x-2">
-            <span class="text-xs font-semibold text-slate-400">Path:</span>
-            <select id="startSuspect" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 outline-none">
+        <div class="flex items-center bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1 space-x-1.5">
+            <span class="text-[11px] font-semibold text-slate-400">Path:</span>
+            <select id="startSuspect" class="bg-slate-900 border border-slate-700 text-[11px] text-slate-200 rounded px-2 py-0.5 outline-none">
                 <option value="Ravi Kumar">Ravi Kumar (Mule)</option>
                 <option value="Vikas Sharma">Vikas Sharma (Mule)</option>
                 <option value="Amit Verma">Amit Verma (Logistics)</option>
             </select>
             <span class="text-slate-500 text-xs">➔</span>
-            <select id="endSuspect" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded px-2 py-1 outline-none">
+            <select id="endSuspect" class="bg-slate-900 border border-slate-700 text-[11px] text-slate-200 rounded px-2 py-0.5 outline-none">
                 <option value="Vikram Sethi">Vikram Sethi (Kingpin)</option>
                 <option value="Anita Roy">Anita Roy (Hawala)</option>
                 <option value="Sameer Khan">Sameer Khan (Handler)</option>
             </select>
-            <button onclick="traceShortestPath()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs px-3 py-1 rounded transition">
+            <button onclick="traceShortestPath()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] px-2.5 py-0.5 rounded transition">
                 Trace Link
             </button>
         </div>
 
         <!-- Action Triggers -->
-        <div class="flex items-center space-x-2">
-            <button onclick="openIngestModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-emerald-900/30 flex items-center gap-1">
+        <div class="flex items-center flex-wrap gap-1.5">
+            <button onclick="openIngestModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
                 ➕ Ingest Intel
             </button>
-            <button onclick="detectKingpins()" class="bg-red-600 hover:bg-red-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-red-900/30">
+            <button onclick="openRaidModal()" class="bg-rose-700 hover:bg-rose-600 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
+                🎯 Raid Sim
+            </button>
+            <button onclick="detectKingpins()" class="bg-red-600 hover:bg-red-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
                 👑 Kingpin
             </button>
-            <button onclick="detectBridgeNode()" class="bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-purple-900/30">
-                🌉 Bridge Node
+            <button onclick="detectBridgeNode()" class="bg-purple-600 hover:bg-purple-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
+                🌉 Bridge
             </button>
-            <button onclick="traceHawala()" class="bg-teal-600 hover:bg-teal-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-teal-900/30">
-                💸 Hawala Flow
+            <button onclick="clusterSyndicateCells()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
+                🧬 Cells
             </button>
-            <button onclick="detectBurners()" class="bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-amber-900/30">
-                📱 Burner Links
+            <button onclick="traceHawala()" class="bg-teal-600 hover:bg-teal-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
+                💸 Hawala
             </button>
-            <button onclick="generateDossier()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs px-3 py-1.5 rounded-lg transition shadow-md shadow-blue-900/30">
+            <button onclick="detectBurners()" class="bg-amber-600 hover:bg-amber-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
+                📱 Burners
+            </button>
+            <button onclick="generateDossier()" class="bg-blue-600 hover:bg-blue-500 text-white font-medium text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-sm">
                 📄 Dossier
             </button>
-            <button onclick="loadGraph()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs px-2.5 py-1.5 rounded-lg transition">
+            <!-- Prominent Reset Button -->
+            <button onclick="loadGraph()" class="bg-slate-700 hover:bg-slate-600 border border-slate-500 text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1">
                 🔄 Reset
             </button>
         </div>
     </header>
 
-    <div class="relative w-full h-full flex">
-        <!-- Graph Canvas -->
-        <div id="network" class="flex-grow"></div>
+    <!-- Main Workspace Container -->
+    <main class="flex-1 relative w-full h-full overflow-hidden">
+        <!-- Interactive Graph Canvas -->
+        <div id="network"></div>
 
         <!-- Floating Dossier / Inspection Sidebar -->
-        <div id="dossier" class="absolute top-4 right-4 w-96 bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl p-5 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-                <h2 class="text-xs font-bold uppercase tracking-wide text-slate-300">Entity Dossier</h2>
-                <span id="badge-type" class="text-[11px] font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-400">Inspect</span>
+        <aside id="dossier" class="absolute top-4 right-4 w-96 max-h-[calc(100vh-100px)] flex flex-col bg-slate-900/95 backdrop-blur-md border border-slate-800 rounded-xl p-4 shadow-2xl z-10 overflow-hidden">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-2.5 flex-shrink-0">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Entity Dossier</h2>
+                <span id="badge-type" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">INSPECT</span>
             </div>
             
-            <div id="dossier-content" class="text-xs space-y-2 text-slate-300">
-                <p class="text-slate-500 italic">Click on any node in the graph to inspect intelligence properties.</p>
+            <div id="dossier-content" class="text-xs space-y-2 text-slate-300 overflow-y-auto flex-1 pr-1">
+                <p class="text-slate-500 italic">Click on any suspect, account, or phone in the graph to inspect intelligence records.</p>
             </div>
 
             <!-- Live Alert Feed Box -->
-            <div class="mt-4 pt-3 border-t border-slate-800">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Live Intel Feed</h3>
-                <div id="alert-feed" class="text-[11px] p-3 rounded bg-slate-950 border border-slate-800 text-slate-400 max-h-48 overflow-y-auto space-y-1">
-                    <p class="text-emerald-400">✓ Graph engine connected to Neo4j AuraDB.</p>
+            <div class="mt-3 pt-2.5 border-t border-slate-800 flex-shrink-0">
+                <h3 class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Live Intel Feed</h3>
+                <div id="alert-feed" class="text-[11px] p-2.5 rounded bg-slate-950 border border-slate-800 text-slate-400 max-h-36 overflow-y-auto space-y-1">
+                    <p class="text-emerald-400 font-mono">✓ Engine online: Neo4j AuraDB linked.</p>
                     <p class="text-slate-500">Ready for automated pathfinding and centrality queries.</p>
                 </div>
             </div>
-        </div>
-    </div>
+        </aside>
+    </main>
 
     <!-- Live Evidence Ingestion Modal -->
     <div id="ingestModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
                 <h3 class="font-bold text-slate-100 flex items-center gap-2">
-                    <span class="text-emerald-500">⚡</span> Log Live Evidence / Entity
+                    <span class="text-emerald-500">⚡</span> Ingest Live Evidence / Entity
                 </h3>
-                <button onclick="closeIngestModal()" class="text-slate-400 hover:text-slate-100 text-lg">&times;</button>
+                <button onclick="closeIngestModal()" class="text-slate-400 hover:text-slate-100 text-xl font-bold">&times;</button>
             </div>
 
-            <!-- Tabs -->
+            <!-- Modal Tabs -->
             <div class="flex border-b border-slate-800 mb-4 text-xs font-semibold">
                 <button id="tabSuspectBtn" onclick="switchTab('suspect')" class="pb-2 border-b-2 border-emerald-500 text-emerald-400 px-3">Suspect</button>
                 <button id="tabCallBtn" onclick="switchTab('call')" class="pb-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200 px-3">Wiretap Call</button>
@@ -118,7 +127,7 @@
             <!-- Suspect Form -->
             <form id="formSuspect" onsubmit="submitSuspect(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-slate-400 mb-1">Suspect Full Name</label>
+                    <label class="block text-slate-400 mb-1">Suspect Name</label>
                     <input id="inputName" required placeholder="e.g., Kabir Mehta" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none focus:border-emerald-500">
                 </div>
                 <div>
@@ -131,8 +140,8 @@
                     </select>
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">Linked Phone Number (Optional)</label>
-                    <input id="inputPhone" placeholder="+91-98888-77777" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                    <label class="block text-slate-400 mb-1">Assigned Phone Number (Optional)</label>
+                    <input id="inputPhone" placeholder="+91-90000-88888" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
                 </div>
                 <div class="pt-2 flex justify-end space-x-2">
                     <button type="button" onclick="closeIngestModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Cancel</button>
@@ -143,22 +152,50 @@
             <!-- Wiretap Form -->
             <form id="formCall" onsubmit="submitCall(event)" class="hidden space-y-3 text-xs">
                 <div>
-                    <label class="block text-slate-400 mb-1">Caller Phone Number</label>
+                    <label class="block text-slate-400 mb-1">Caller Number</label>
                     <input id="inputCaller" required placeholder="+91-98888-11111" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">Receiver Phone Number</label>
+                    <label class="block text-slate-400 mb-1">Receiver Number</label>
                     <input id="inputReceiver" required placeholder="+91-90000-88888" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">Intercepted Call Duration (seconds)</label>
+                    <label class="block text-slate-400 mb-1">Call Duration (seconds)</label>
                     <input id="inputDuration" type="number" value="180" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
                 </div>
                 <div class="pt-2 flex justify-end space-x-2">
                     <button type="button" onclick="closeIngestModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Cancel</button>
-                    <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Log Call Link</button>
+                    <button type="submit" class="px-4 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold">Log Call Edge</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Tactical Raid Simulation Modal -->
+    <div id="raidModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                <h3 class="font-bold text-slate-100 flex items-center gap-2">
+                    <span class="text-rose-500">🎯</span> Tactical Arrest Simulator
+                </h3>
+                <button onclick="closeRaidModal()" class="text-slate-400 hover:text-slate-100 text-xl font-bold">&times;</button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <p class="text-slate-400">Select a target to simulate an immediate law enforcement takedown and evaluate the resulting syndicate collapse:</p>
+                <div>
+                    <label class="block text-slate-400 mb-1">Target to Neutralize</label>
+                    <select id="raidTargetSelect" class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 outline-none">
+                        <option value="Sameer Khan">Sameer Khan (Critical Handler)</option>
+                        <option value="Vikram Sethi">Vikram Sethi (Syndicate Kingpin)</option>
+                        <option value="Amit Verma">Amit Verma (Logistics / Accounts)</option>
+                        <option value="Ravi Kumar">Ravi Kumar (Street Mule)</option>
+                    </select>
+                </div>
+                <div class="pt-3 flex justify-end space-x-2">
+                    <button type="button" onclick="closeRaidModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Cancel</button>
+                    <button type="button" onclick="executeRaidSimulation()" class="px-4 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold">Simulate Takedown</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -181,6 +218,14 @@
 
         function closeIngestModal() {
             document.getElementById("ingestModal").classList.add("hidden");
+        }
+
+        function openRaidModal() {
+            document.getElementById("raidModal").classList.remove("hidden");
+        }
+
+        function closeRaidModal() {
+            document.getElementById("raidModal").classList.add("hidden");
         }
 
         function switchTab(tab) {
@@ -219,9 +264,11 @@
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
-                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Suspect ${name} registered and linked into Neo4j.</p>`;
+                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Suspect ${name} registered in Neo4j.</p>`;
                     closeIngestModal();
                     await loadGraph();
+                } else {
+                    feed.innerHTML += `<p class="text-red-400">Server returned ${res.status}</p>`;
                 }
             } catch (err) {
                 feed.innerHTML += `<p class="text-red-400">Ingestion failed: ${err.message}</p>`;
@@ -235,7 +282,7 @@
             const duration = parseInt(document.getElementById("inputDuration").value) || 60;
             const feed = document.getElementById("alert-feed");
 
-            feed.innerHTML += `<p class="text-amber-400">⚡ Registering wiretap between ${caller} & ${receiver}...</p>`;
+            feed.innerHTML += `<p class="text-amber-400">⚡ Logging wiretap: ${caller} ➔ ${receiver}...</p>`;
             try {
                 const res = await fetch("/calls", {
                     method: "POST",
@@ -243,7 +290,7 @@
                     body: JSON.stringify({ caller, receiver, call_count: 1, total_duration: duration })
                 });
                 if (res.ok) {
-                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Wiretap call edge mapped.</p>`;
+                    feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Wiretap connection edge mapped.</p>`;
                     closeIngestModal();
                     await loadGraph();
                 }
@@ -316,7 +363,7 @@
                     }
                 });
 
-                feed.innerHTML += `<p class="text-emerald-400">✓ Graph ready: ${nodesArray.length} entities & ${edgesArray.length} links.</p>`;
+                feed.innerHTML += `<p class="text-emerald-400">✓ Graph active: ${nodesArray.length} entities & ${edgesArray.length} links.</p>`;
             } catch (err) {
                 feed.innerHTML += `<p class="text-red-400">Failed to fetch graph data: ${err.message}</p>`;
             }
@@ -326,7 +373,7 @@
             const node = visNodes.get(nodeId);
             if (!node) return;
 
-            document.getElementById("badge-type").innerText = node.nodeType;
+            document.getElementById("badge-type").innerText = node.nodeType.toUpperCase();
             let html = `<div class="font-bold text-sm text-slate-100 mb-2">${node.label}</div>`;
             html += `<table class="w-full text-left">`;
             for (let [k, v] of Object.entries(node.rawProps || {})) {
@@ -341,14 +388,15 @@
             const end = document.getElementById("endSuspect").value;
             const feed = document.getElementById("alert-feed");
 
-            feed.innerHTML += `<p class="text-cyan-400">🔍 Calculating shortest path between <b>${start}</b> and <b>${end}</b>...</p>`;
+            feed.innerHTML += `<p class="text-cyan-400">🔍 Calculating path: <b>${start}</b> ➔ <b>${end}</b>...</p>`;
 
             try {
                 const res = await fetch(`/network/shortest-path?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 
                 if (!data.path || !data.path.node_ids) {
-                    feed.innerHTML += `<p class="text-amber-400">No indirect connection found between these targets.</p>`;
+                    feed.innerHTML += `<p class="text-amber-400">No indirect connection found between targets.</p>`;
                     return;
                 }
 
@@ -383,12 +431,13 @@
             feed.innerHTML += `<p class="text-purple-400">🌉 Computing betweenness centrality & bridge nodes...</p>`;
             try {
                 const res = await fetch("/analytics/bridge-nodes");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
                 const bridges = data.bridge_nodes;
 
                 if (bridges.length > 0) {
                     const top = bridges[0];
-                    feed.innerHTML += `<p class="text-purple-300 font-bold">⚠️ CRITICAL BOTTLENECK: <b>${top.person}</b> (${top.role}) [Score: ${top.broker_score}]. Severing this node breaks communications!</p>`;
+                    feed.innerHTML += `<p class="text-purple-300 font-bold">⚠️ CRITICAL BOTTLENECK: <b>${top.person}</b> (${top.role}) [Score: ${top.broker_score}]. Severing this node fractures communications!</p>`;
 
                     visNodes.get().forEach(n => {
                         if (n.label === top.person) {
@@ -406,83 +455,205 @@
         async function detectKingpins() {
             const feed = document.getElementById("alert-feed");
             feed.innerHTML += `<p class="text-red-400">👑 Analyzing command hierarchy & funding trails...</p>`;
-            const res = await fetch("/analytics/kingpins");
-            const data = await res.json();
-            const kingpins = data.kingpin_candidates;
+            try {
+                const res = await fetch("/analytics/kingpins");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const kingpins = data.kingpin_candidates;
 
-            if (kingpins.length > 0) {
-                const top = kingpins[0];
-                feed.innerHTML += `<p class="text-red-500 font-bold">⚠️ KINGPIN IDENTIFIED: ${top.candidate_name} (Risk: ${top.risk_score})</p>`;
-                
-                visNodes.get().forEach(n => {
-                    if (n.label === top.candidate_name) {
-                        visNodes.update({ id: n.id, size: 45, color: { background: "#ff0044", border: "#ffffff" } });
-                        network.focus(n.id, { scale: 1.2, animation: true });
-                        inspectNode(n.id);
+                if (kingpins.length > 0) {
+                    const top = kingpins[0];
+                    feed.innerHTML += `<p class="text-red-500 font-bold">⚠️ KINGPIN IDENTIFIED: ${top.candidate_name} (Risk: ${top.risk_score})</p>`;
+                    
+                    visNodes.get().forEach(n => {
+                        if (n.label === top.candidate_name) {
+                            visNodes.update({ id: n.id, size: 45, color: { background: "#ff0044", border: "#ffffff" } });
+                            network.focus(n.id, { scale: 1.2, animation: true });
+                            inspectNode(n.id);
+                        }
+                    });
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Kingpin detection failed: ${err.message}</p>`;
+            }
+        }
+
+        async function clusterSyndicateCells() {
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-indigo-400">🧬 Partitioning syndicate into operational cells...</p>`;
+
+            try {
+                const res = await fetch("/analytics/cells");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                const cells = data.cells;
+
+                let personColorMap = {};
+                cells.forEach(cell => {
+                    cell.operatives.forEach(op => {
+                        personColorMap[op.name] = cell.color;
+                    });
+                });
+
+                visNodes.get().forEach(node => {
+                    if (personColorMap[node.label]) {
+                        const assignedColor = personColorMap[node.label];
+                        visNodes.update({
+                            id: node.id,
+                            color: { background: assignedColor, border: "#ffffff" },
+                            size: 28
+                        });
                     }
                 });
+
+                feed.innerHTML += `<p class="text-indigo-300 font-bold">✓ Classified ${cells.length} autonomous cells across network.</p>`;
+
+                document.getElementById("badge-type").innerText = "CELL CLUSTERS";
+                let html = `<div class="font-bold text-xs text-indigo-400 uppercase tracking-wide border-b border-slate-800 pb-1 mb-2">Syndicate Cell Clusters</div>`;
+                html += `<div class="space-y-3 text-xs">`;
+                cells.forEach(cell => {
+                    html += `
+                        <div class="p-2 rounded bg-slate-950 border border-slate-800" style="border-left: 4px solid ${cell.color};">
+                            <div class="font-bold text-slate-200">${cell.cell_name}</div>
+                            <div class="text-slate-400 text-[10px] mt-1">Operatives (${cell.size}):</div>
+                            <div class="text-slate-300 text-[11px] font-mono mt-0.5">
+                                ${cell.operatives.map(o => `${o.name} <span class='text-slate-500'>(${o.role})</span>`).join(", ")}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
+                document.getElementById("dossier-content").innerHTML = html;
+
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Cell clustering failed: ${err.message}</p>`;
             }
         }
 
         async function traceHawala() {
             const feed = document.getElementById("alert-feed");
-            feed.innerHTML += `<p class="text-emerald-400">💸 Tracing cross-border Hawala funds...</p>`;
-            const res = await fetch("/analytics/money-trail/CH-SWISS-909");
-            const data = await res.json();
+            feed.innerHTML += `<p class="text-teal-400">💸 Tracing cross-border Hawala funds...</p>`;
+            try {
+                const res = await fetch("/analytics/money-trail/CH-SWISS-909");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
 
-            if (data.trails && data.trails.length > 0) {
-                feed.innerHTML += `<p class="text-emerald-400 font-bold">✓ Multi-hop money laundering chain flagged across ${data.trails.length} pathways.</p>`;
-                visNodes.get().forEach(n => {
-                    if (n.nodeType === "BankAccount") {
-                        visNodes.update({ id: n.id, size: 30, color: { background: "#10b981", border: "#ffffff" } });
-                    }
-                });
+                if (data.trails && data.trails.length > 0) {
+                    feed.innerHTML += `<p class="text-teal-400 font-bold">✓ Multi-hop money laundering chain flagged across ${data.trails.length} pathways.</p>`;
+                    visNodes.get().forEach(n => {
+                        if (n.nodeType === "BankAccount") {
+                            visNodes.update({ id: n.id, size: 30, color: { background: "#10b981", border: "#ffffff" } });
+                        }
+                    });
+                } else {
+                    feed.innerHTML += `<p class="text-amber-400">No active transfer trails found for this account.</p>`;
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Hawala trace failed: ${err.message}</p>`;
             }
         }
 
         async function detectBurners() {
             const feed = document.getElementById("alert-feed");
             feed.innerHTML += `<p class="text-amber-400">📱 Intercepting burner phone sharing...</p>`;
-            const res = await fetch("/analytics/shared-phones");
-            const data = await res.json();
+            try {
+                const res = await fetch("/analytics/shared-phones");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
 
-            if (data.shared_identifiers && data.shared_identifiers.length > 0) {
-                const item = data.shared_identifiers[0];
-                feed.innerHTML += `<p class="text-amber-400 font-bold">⚠️ Burner ${item.shared_phone} connects ${item.person_1} & ${item.person_2}!</p>`;
-                
-                visNodes.get().forEach(n => {
-                    if (n.label === item.shared_phone) {
-                        visNodes.update({ id: n.id, size: 32, color: { background: "#f59e0b", border: "#ffffff" } });
-                        network.focus(n.id, { scale: 1.1, animation: true });
-                        inspectNode(n.id);
-                    }
-                });
+                if (data.shared_identifiers && data.shared_identifiers.length > 0) {
+                    const item = data.shared_identifiers[0];
+                    feed.innerHTML += `<p class="text-amber-400 font-bold">⚠️ Burner ${item.shared_phone} connects ${item.person_1} & ${item.person_2}!</p>`;
+                    
+                    visNodes.get().forEach(n => {
+                        if (n.label === item.shared_phone) {
+                            visNodes.update({ id: n.id, size: 32, color: { background: "#f59e0b", border: "#ffffff" } });
+                            network.focus(n.id, { scale: 1.1, animation: true });
+                            inspectNode(n.id);
+                        }
+                    });
+                }
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Burner link trace failed: ${err.message}</p>`;
             }
         }
 
         async function generateDossier() {
             const feed = document.getElementById("alert-feed");
             feed.innerHTML += `<p class="text-blue-400">📄 Synthesizing official Law Enforcement Dossier...</p>`;
-            const res = await fetch("/analytics/dossier");
-            const data = await res.json();
+            try {
+                const res = await fetch("/analytics/dossier");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
 
-            document.getElementById("badge-type").innerText = "DOSSIER BRIEF";
-            let html = `
-                <div class="font-bold text-xs text-red-400 uppercase tracking-wide border-b border-slate-800 pb-1 mb-2">${data.title}</div>
-                <div class="space-y-2">
-                    <p><b>Target:</b> <span class="text-red-400 font-bold">${data.primary_target.name}</span> (${data.primary_target.classification})</p>
-                    <p><b>Risk Rating:</b> <span class="text-amber-400">${data.primary_target.risk_rating}</span></p>
-                    <p><b>Critical Bottleneck:</b> <span class="text-purple-400 font-semibold">${data.critical_broker.name}</span></p>
-                    <div class="mt-2 text-[10px] bg-slate-950 p-2 rounded border border-slate-800">
-                        <p class="font-bold text-emerald-400 mb-1">Recommended Actions:</p>
-                        <ul class="list-disc list-inside space-y-1 text-slate-300">
-                            ${data.recommended_enforcement_actions.map(a => `<li>${a}</li>`).join("")}
-                        </ul>
+                document.getElementById("badge-type").innerText = "DOSSIER BRIEF";
+                let html = `
+                    <div class="font-bold text-xs text-red-400 uppercase tracking-wide border-b border-slate-800 pb-1 mb-2">${data.title}</div>
+                    <div class="space-y-2">
+                        <p><b>Target:</b> <span class="text-red-400 font-bold">${data.primary_target.name}</span> (${data.primary_target.classification})</p>
+                        <p><b>Risk Rating:</b> <span class="text-amber-400">${data.primary_target.risk_rating}</span></p>
+                        <p><b>Critical Bottleneck:</b> <span class="text-purple-400 font-semibold">${data.critical_broker.name}</span></p>
+                        <div class="mt-2 text-[10px] bg-slate-950 p-2 rounded border border-slate-800">
+                            <p class="font-bold text-emerald-400 mb-1">Recommended Actions:</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-300">
+                                ${data.recommended_enforcement_actions.map(a => `<li>${a}</li>`).join("")}
+                            </ul>
+                        </div>
                     </div>
-                </div>
-            `;
-            document.getElementById("dossier-content").innerHTML = html;
-            feed.innerHTML += `<p class="text-blue-300 font-bold">✓ Charge Sheet generated in inspection sidebar.</p>`;
+                `;
+                document.getElementById("dossier-content").innerHTML = html;
+                feed.innerHTML += `<p class="text-blue-300 font-bold">✓ Charge Sheet generated in inspection sidebar.</p>`;
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Dossier failed: ${err.message}</p>`;
+            }
+        }
+
+        async function executeRaidSimulation() {
+            const target = document.getElementById("raidTargetSelect").value;
+            closeRaidModal();
+            const feed = document.getElementById("alert-feed");
+            feed.innerHTML += `<p class="text-rose-400">🎯 Simulating tactical takedown on <b>${target}</b>...</p>`;
+
+            try {
+                const res = await fetch(`/analytics/simulate-arrest/${encodeURIComponent(target)}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                feed.innerHTML += `<p class="text-rose-400 font-bold">⚠️ SYNDICATE IMPACT: ${data.impact_rating}</p>`;
+                feed.innerHTML += `<p class="text-slate-300 text-[10px]">${data.tactical_assessment}</p>`;
+
+                visNodes.get().forEach(n => {
+                    if (n.label === target) {
+                        visNodes.update({
+                            id: n.id,
+                            color: { background: "#000000", border: "#f43f5e" },
+                            label: `[ARRESTED]\n${n.label}`,
+                            shape: "box"
+                        });
+                        network.focus(n.id, { scale: 1.1, animation: true });
+                    }
+                });
+
+                document.getElementById("badge-type").innerText = "SIMULATION REPORT";
+                let html = `
+                    <div class="font-bold text-xs text-rose-400 uppercase tracking-wide border-b border-slate-800 pb-1 mb-2">Target Takedown Analysis</div>
+                    <div class="space-y-2 text-xs">
+                        <p><b>Arrested:</b> <span class="text-rose-400 font-bold">${data.target_neutralized}</span></p>
+                        <p><b>Impact Level:</b> <span class="text-amber-400 font-bold">${data.impact_rating}</span></p>
+                        <p><b>Severed Links:</b> <span class="text-slate-200 font-mono">${data.severed_connections_count}</span></p>
+                        <div class="mt-2 text-[11px] bg-slate-950 p-2 rounded border border-slate-800 space-y-1">
+                            <p class="font-bold text-rose-400">Stranded Field Agents:</p>
+                            <p class="text-slate-300">${data.stranded_field_agents.length > 0 ? data.stranded_field_agents.join(", ") : "None (agents re-routed)"}</p>
+                            <p class="font-bold text-teal-400 mt-2">Cut-off Accounts:</p>
+                            <p class="text-slate-300">${data.compromised_accounts.length > 0 ? data.compromised_accounts.join(", ") : "No direct accounts linked"}</p>
+                        </div>
+                    </div>
+                `;
+                document.getElementById("dossier-content").innerHTML = html;
+
+            } catch (err) {
+                feed.innerHTML += `<p class="text-red-400">Simulation failed: ${err.message}</p>`;
+            }
         }
 
         window.onload = loadGraph;
