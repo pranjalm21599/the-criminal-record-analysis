@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 
+from app.routers.analysis import router as analysis_router
+
+
 app = FastAPI(
     title="Criminal Network Analysis Service",
     description="Member 4 - Network Analysis and AI Service",
@@ -14,3 +17,6 @@ def root():
         "member": "Member 4",
         "status": "running"
     }
+
+
+app.include_router(analysis_router)
