@@ -4,9 +4,11 @@ from neo4j import GraphDatabase
 
 load_dotenv()
 
-uri = os.getenv("NEO4J_URI")
-user = os.getenv("NEO4J_USER")
-password = os.getenv("NEO4J_PASSWORD")
+# Same defaults as app/neo4j_driver.py, so this reports on the connection the
+# service would actually make rather than printing "None" when there is no .env.
+uri = os.getenv("NEO4J_URI") or "bolt://localhost:7687"
+user = os.getenv("NEO4J_USER") or "neo4j"
+password = os.getenv("NEO4J_PASSWORD") or "criminal123"
 
 print(f"Testing connection to: {uri} ...")
 

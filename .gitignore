@@ -1,0 +1,26 @@
+# Secrets — never commit real credentials
+.env
+*/.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.venv-test/
+*.egg-info/
+
+# Databases / local state
+*.sqlite3
+chroma_data/
+
+# Uploaded evidence
+uploads/*
+!uploads/.gitkeep
+
+# Node
+node_modules/
+dist/
+
+# OS
+.DS_Store

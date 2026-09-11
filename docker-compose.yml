@@ -1,0 +1,139 @@
+# Full stack for the Criminal Network Analysis System.
+#
+# Run from the repo root:   docker compose up --build
+# Ports match the team's service map and integration/health_check.py.
+
+services:
+  # ===== DATABASES =====
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: criminal_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d criminal_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  neo4j:
+    image: neo4j:5.13
+    ports:
+      - "7474:7474"   # Browser UI
+      - "7687:7687"   # Bolt
+    environment:
+      NEO4J_AUTH: neo4j/criminal123
+      NEO4J_PLUGINS: '["apoc"]'
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      # cypher-shell exits non-zero until Neo4j is actually accepting queries,
+      # which is what dependent services need to wait for.
+      test: ["CMD-SHELL", "cypher-shell -u neo4j -p criminal123 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  # ===== SERVICES =====
+  backend:                          # Member 1
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://admin:password@postgres:5432/criminal_db
+      MONGO_URL: mongodb://mongodb:27017/criminal_docs
+      REDIS_URL: redis://redis:6379
+      NLP_API: http://nlp_service:8001
+      GRAPH_API: http://graph_service:8002
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nlp_service:                      # Member 2
+    build: ./nlp_service
+    ports:
+      - "8001:8001"
+
+  graph_service:                    # Member 3
+    build: ./graph_service
+    ports:
+      - "8002:8002"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: criminal123
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+  analysis_service:                 # Member 4
+    build: ./analysis_service
+    ports:
+      - "8003:8003"
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: criminal123
+      BACKEND_API: http://backend:8000
+    depends_on:
+      neo4j:
+        condition: service_healthy
+
+  ai_service:                       # Member 6
+    build: ./ai_service
+    ports:
+      - "8004:8004"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: criminal123
+      BACKEND_API: http://backend:8000
+      GRAPH_API: http://graph_service:8002
+      ANALYSIS_API: http://analysis_service:8003
+    depends_on:
+      - graph_service
+      - analysis_service
+
+  # ===== FRONTEND =====
+  frontend:                         # Member 5
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      # Live-mount the source so Vite hot-reloads your edits instead of
+      # serving the copy baked in at build time. The bare /app/node_modules
+      # entry keeps the container's Linux-built dependencies from being
+      # shadowed by the host's.
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+      - graph_service
+
+volumes:
+  postgres_data:
+  mongo_data:
+  neo4j_data:

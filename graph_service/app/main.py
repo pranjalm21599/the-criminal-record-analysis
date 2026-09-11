@@ -8,8 +8,10 @@ import os
 from app.builders.person_builder import PersonBuilder
 from app.builders.phone_builder import PhoneBuilder
 from app.builders.case_builder import CaseBuilder
+from app.neo4j_driver import db
 from app.resolvers.entity_resolver import EntityResolver
 from app.resolvers.network_analytics import NetworkAnalytics
+from app.routers import graph_api
 
 app = FastAPI(
     title="Criminal Network Analysis Graph API",
@@ -31,6 +33,26 @@ phone_builder = PhoneBuilder()
 case_builder = CaseBuilder()
 resolver = EntityResolver()
 analytics = NetworkAnalytics()
+
+# The /graph/* contract used by the frontend, the AI service and the
+# ingestion pipeline. Registered before the legacy routes below.
+app.include_router(graph_api.router)
+
+
+@app.get("/health")
+def health():
+    """Reports Neo4j reachability, not just process liveness."""
+    try:
+        db.execute_query("RETURN 1 AS ok")
+        neo4j_connected = True
+    except Exception:
+        neo4j_connected = False
+
+    return {
+        "status": "ok",
+        "service": "Knowledge Graph",
+        "neo4j_connected": neo4j_connected,
+    }
 
 # --- Schemas ---
 class PersonCreate(BaseModel):

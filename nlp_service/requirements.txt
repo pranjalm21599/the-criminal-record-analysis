@@ -1,0 +1,8 @@
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+pandas==2.2.3
+spacy==3.7.5
+# The English model spaCy's NER needs. Installed from a pinned URL because it
+# is not on PyPI under this name.
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl

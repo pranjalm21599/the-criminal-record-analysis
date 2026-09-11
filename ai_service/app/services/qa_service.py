@@ -140,6 +140,11 @@ class QAService:
         session = self._sessions.get(conversation_id)
         if session is None:
             session = self.llm.create_chat()
+            if session is None:  # no API key configured
+                return {
+                    "message": self.llm.MISSING_KEY_MESSAGE,
+                    "conversation_id": conversation_id,
+                }
             self._sessions[conversation_id] = session
 
         try:

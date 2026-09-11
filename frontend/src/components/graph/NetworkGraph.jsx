@@ -57,7 +57,24 @@ export default function NetworkGraph({ personName, onNodeClick }) {
 
       setGraphData({ nodes: cytoscapeNodes, edges: cytoscapeEdges });
     } catch (err) {
-      setError('Could not reach the Graph service (port 8002). Start it, or run docker compose up.');
+      // Distinguish "that name isn't in the graph" from "the service is down".
+      // Blaming the service for a simple no-match sends people off restarting
+      // containers when they just need a different name.
+      const status = err.response?.status;
+      const detail = err.response?.data?.detail;
+
+      if (status === 404) {
+        const suggestions = detail?.did_you_mean;
+        setError(
+          suggestions?.length
+            ? `No one matching "${name}" in the graph. Try: ${suggestions.slice(0, 5).join(', ')}`
+            : `No one matching "${name}" in the graph. Upload evidence first, or try another name.`
+        );
+      } else if (status === 503) {
+        setError('The Graph service cannot reach Neo4j. Check: docker compose logs neo4j');
+      } else {
+        setError('Could not reach the Graph service (port 8002). Start it, or run docker compose up.');
+      }
     } finally {
       setLoading(false);
     }

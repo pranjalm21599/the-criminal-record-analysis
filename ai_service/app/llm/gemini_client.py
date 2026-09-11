@@ -36,17 +36,27 @@ class GeminiClient:
     genai.Client is stateless/threadsafe; conversation state for multi-turn
     chat lives in the caller (QAService), not here."""
 
+    MISSING_KEY_MESSAGE = (
+        "The AI assistant is not configured: GEMINI_API_KEY is not set. "
+        "Get a free key at https://aistudio.google.com/ and add it to your "
+        ".env, then restart the AI service."
+    )
+
     def __init__(self):
-        if not settings.GEMINI_API_KEY:
-            raise ValueError(
-                "GEMINI_API_KEY not set. Get a free key at "
-                "https://aistudio.google.com/ and put it in your .env"
-            )
-        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
+        # A missing key must not stop the service from starting — the router
+        # builds a QAService at import time, so raising here would take the
+        # whole process down and make /health unreachable too. Instead the
+        # service starts, reports itself unconfigured, and says so on every
+        # question.
         self.model = settings.GEMINI_MODEL
+        self.configured = bool(settings.GEMINI_API_KEY)
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY) if self.configured else None
 
     def generate_response(self, question: str, context: str = "") -> str:
         """Single-turn, evidence-grounded answer. Used by /chat/ask."""
+        if not self.configured:
+            return self.MISSING_KEY_MESSAGE
+
         prompt = f"""=== AVAILABLE EVIDENCE ===
 {context or "No evidence was retrieved for this question."}
 =========================
@@ -74,7 +84,12 @@ Provide a clear, evidence-based answer:"""
 
     def create_chat(self, history: list | None = None):
         """Returns a stateful Gemini chat session for multi-turn conversation.
-        `history` is a list of {"role": "user"|"model", "parts": [text]} dicts."""
+        `history` is a list of {"role": "user"|"model", "parts": [text]} dicts.
+        Returns None when no API key is configured; callers fall back to
+        MISSING_KEY_MESSAGE."""
+        if not self.configured:
+            return None
+
         return self.client.chats.create(
             model=self.model,
             history=history or [],
